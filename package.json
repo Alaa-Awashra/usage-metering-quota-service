@@ -1,0 +1,22 @@
+{
+  "name": "usage-metering-quota-service",
+  "private": true,
+  "type": "module",
+  "workspaces": ["service", "client"],
+  "scripts": {
+    "build": "npm run build -w service && npm run build -w client",
+    "typecheck": "npm run typecheck -w service && npm run typecheck -w client && tsc --noEmit -p loadtest/tsconfig.json",
+    "test": "npm run test -w service",
+    "test:unit": "npm run test:unit -w service",
+    "test:integration": "npm run test:integration -w service",
+    "test:concurrency": "npm run test:concurrency -w service",
+    "test:security": "npm run test:security -w service",
+    "db:migrate": "npm run db:migrate -w service",
+    "db:seed": "npm run db:seed -w service",
+    "db:reconcile": "tsx scripts/reconcile.ts",
+    "client": "npm run client -w client --",
+    "loadtest": "tsx loadtest/run.ts",
+    "start": "npm run start -w service"
+  },
+  "devDependencies": {"tsx": "4.20.6", "typescript": "5.9.3", "@types/node": "24.7.2"}
+}

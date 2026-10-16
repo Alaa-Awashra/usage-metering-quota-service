@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+loadtest/results/*.json
+!loadtest/results/baseline-2026-10-16.json
+*.log

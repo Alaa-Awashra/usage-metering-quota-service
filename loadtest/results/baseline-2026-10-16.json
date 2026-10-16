@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-10-16T10:33:00.259Z",
+  "environment": {
+    "node": "v24.14.1",
+    "platform": "win32",
+    "osRelease": "10.0.19045",
+    "cpus": [
+      "Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz",
+      "Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz",
+      "Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz",
+      "Intel(R) Core(TM) i5-7300HQ CPU @ 2.50GHz"
+    ],
+    "totalMemoryBytes": 12765237248,
+    "freeMemoryBytesAtStart": 2204454912,
+    "databaseVersion": "not exposed by HTTP API",
+    "apiBaseUrl": "http://localhost:3000",
+    "concurrency": 16,
+    "requestsPerScenario": 100,
+    "repeats": 1
+  },
+  "runs": [
+    {
+      "scenario": "distributed",
+      "run": 1,
+      "setupAccounts": 50,
+      "setupUsers": 500,
+      "requests": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "replayed": 0,
+      "unexpectedErrors": 0,
+      "durationMs": 3290.4073999999964,
+      "requestsPerSecond": 30.391373420811085,
+      "latencyMs": {
+        "p50": 169.6190999999999,
+        "p95": 2290.6227,
+        "p99": 2971.0299000000014,
+        "max": 3179.471700000002
+      },
+      "verification": {
+        "ok": true,
+        "failures": [],
+        "accountCount": 50,
+        "historyRows": 100,
+        "acceptedHistoryUnits": 100
+      },
+      "errors": []
+    },
+    {
+      "scenario": "hot",
+      "run": 1,
+      "setupAccounts": 1,
+      "setupUsers": 200,
+      "requests": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "replayed": 0,
+      "unexpectedErrors": 0,
+      "durationMs": 3734.053,
+      "requestsPerSecond": 26.780551856119878,
+      "latencyMs": {
+        "p50": 515.7024999999994,
+        "p95": 1155.6028000000006,
+        "p99": 1375.204700000002,
+        "max": 1424.530200000001
+      },
+      "verification": {
+        "ok": true,
+        "failures": [],
+        "accountCount": 1,
+        "historyRows": 100,
+        "acceptedHistoryUnits": 100
+      },
+      "errors": []
+    },
+    {
+      "scenario": "retries",
+      "run": 1,
+      "setupAccounts": 1,
+      "setupUsers": 20,
+      "requests": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "replayed": 20,
+      "unexpectedErrors": 0,
+      "durationMs": 2968.2190000000046,
+      "requestsPerSecond": 33.6902364684007,
+      "latencyMs": {
+        "p50": 284.4236000000019,
+        "p95": 1116.6529999999984,
+        "p99": 1300.707500000004,
+        "max": 1350.7611000000034
+      },
+      "verification": {
+        "ok": true,
+        "failures": [],
+        "accountCount": 1,
+        "historyRows": 80,
+        "acceptedHistoryUnits": 80
+      },
+      "errors": []
+    },
+    {
+      "scenario": "plan-changes",
+      "run": 1,
+      "setupAccounts": 1,
+      "setupUsers": 20,
+      "requests": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "replayed": 0,
+      "unexpectedErrors": 0,
+      "durationMs": 3919.544399999999,
+      "requestsPerSecond": 25.513169336721898,
+      "latencyMs": {
+        "p50": 441.2820000000065,
+        "p95": 1190.891300000003,
+        "p99": 1342.1770000000033,
+        "max": 1705.0106000000014
+      },
+      "verification": {
+        "ok": true,
+        "failures": [],
+        "accountCount": 1,
+        "historyRows": 100,
+        "acceptedHistoryUnits": 100
+      },
+      "errors": []
+    },
+    {
+      "scenario": "rejection",
+      "run": 1,
+      "setupAccounts": 1,
+      "setupUsers": 20,
+      "requests": 100,
+      "accepted": 0,
+      "rejected": 100,
+      "replayed": 0,
+      "unexpectedErrors": 0,
+      "durationMs": 3929.3980999999985,
+      "requestsPerSecond": 25.449190297109382,
+      "latencyMs": {
+        "p50": 573.6428999999989,
+        "p95": 694.2527000000046,
+        "p99": 801.1257000000041,
+        "max": 861.8125999999975
+      },
+      "verification": {
+        "ok": true,
+        "failures": [],
+        "accountCount": 1,
+        "historyRows": 100,
+        "acceptedHistoryUnits": 0
+      },
+      "errors": []
+    }
+  ]
+}
