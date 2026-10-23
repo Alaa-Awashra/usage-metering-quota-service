@@ -36,7 +36,7 @@ async function once(input:Input):Promise<Decision> {
       FROM accounts a JOIN plans ap ON ap.id=a.plan_id JOIN users u ON u.account_id=a.id AND u.id=$2 JOIN plans up ON up.id=u.plan_id WHERE a.id=$1`,[input.accountId,userId]);
     const p=effective.rows[0]; if (!p) throw new HttpError(404,'not_found','User not found');
     // Capture time after waiting for configuration. One timestamp selects both counter rows.
-    const time=await client.query("WITH t AS MATERIALIZED (SELECT coalesce($1::timestamptz,clock_timestamp()) AS at) SELECT at,date_trunc('month',at AT TIME ZONE 'UTC')::date AS month FROM t",[input.processingTimeForTest??null]);
+    const time=await client.query("WITH t AS MATERIALIZED (SELECT coalesce($1::timestamptz,clock_timestamp()) AS at) SELECT at,date_trunc('month',at AT TIME ZONE 'UTC')::date::text AS month FROM t",[input.processingTimeForTest??null]);
     const at=time.rows[0].at, month=time.rows[0].month;
     // Always lock user then account counter. Zero-row inserts settle first-month races.
     await client.query('INSERT INTO user_monthly_usage(user_id,month,used) VALUES($1,$2,0) ON CONFLICT DO NOTHING',[userId,month]);

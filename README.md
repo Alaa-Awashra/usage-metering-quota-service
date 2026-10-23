@@ -34,7 +34,7 @@ docker compose up --build
 
 Compose starts persistent PostgreSQL, waits for its health check, runs migrations and idempotent Plan seeding, and starts the API. The API must pass its readiness check before use. `docker compose down` stops containers while preserving the named database volume. Only an explicitly requested `docker compose down -v` removes the data volume.
 
-The API is reachable on `http://localhost:3000` unless Compose's `API_HOST_PORT` is changed. `PORT` controls the server port when running outside Compose. `GET /healthz` is process liveness; `GET /readyz` is database/application readiness. The containerized client must use the Compose service hostname for `API_BASE_URL`, while a host-run client uses `http://localhost:3000`.
+The API is reachable on `http://localhost:3000` unless Compose's `API_HOST_PORT` is changed. `PORT` controls the server port when running outside Compose. `GET /healthz` is process liveness; `GET /readyz` is database/application readiness. The containerized client uses the Compose hostname `http://api:3000` for `API_BASE_URL`; a host-run client uses `http://localhost:3000`. **The default Compose stack includes all three services**: database, API, and a *one-shot* demo client. After the demo finishes successfully the client container exits with code 0; this is expected, not a crash. Inspect its output with `docker compose logs client`. The database and API keep running. The API and PostgreSQL host ports are bound to `127.0.0.1` for local use.
 
 ## npm setup
 
@@ -54,7 +54,7 @@ npm run db:seed
 npm run start
 ```
 
-Integration and concurrency tests require a dedicated database whose name ends in `_test`. With the Compose database running, create it once and set the test URL:
+Integration, concurrency, and security tests require a dedicated database whose name ends in `_test`. With the Compose database running, create it once and set the test URL:
 
 ```bash
 docker compose exec -T db createdb -U meter metering_test
@@ -126,7 +126,7 @@ npm run client -- demo
 
 The demo needs `ADMIN_TOKEN` and `API_BASE_URL` in its environment. It creates two Users with different Plans, accepts a request, rejects at a User maximum, fills and rejects at the shared Account allowance, raises the Account Plan limit, accepts a new request, replays an earlier request, and displays usage and history. It checks expected outcomes and exits with an error if one differs.
 
-To run the same demo inside Compose, use `docker compose --profile demo build client` followed by `docker compose --profile demo run --rm client demo`.
+The `docker compose up --build` quick start **automatically runs the demo client once**, with no special profile. To replay a fresh demo against the already-running API, run `docker compose run --rm client demo`. The demo creates a new Account on each run; it does not reset or overwrite previous data. The CLI commands above are an alternative manual workflow.
 
 ## Tests and load testing
 
@@ -142,7 +142,16 @@ npm run loadtest
 npm run db:reconcile
 ```
 
-Unit tests check pure rule order and boundaries. Integration tests use real PostgreSQL for endpoints, Plan changes, idempotency, month behavior, and counter/history reconciliation. Concurrency tests use separate database connections and controlled contention; they must not be replaced with a mock database. Security tests exercise credential handling and Account isolation. The load runner reports accepted/rejected/error counts, throughput, and p50/p95/p99/max latency, then compares HTTP usage with persisted history and observed decisions. `db:reconcile` requires `DATABASE_URL` and directly compares all PostgreSQL counters with accepted history. [Performance](docs/performance.md) records the measured run and its limits.
+Unit tests check pure rule order and boundaries. Integration tests use real PostgreSQL for endpoints, Plan changes, idempotency, month behavior, and counter/history reconciliation. Concurrency tests use separate database connections and controlled contention; they must not be replaced with a mock database. Security tests exercise credential handling, Account isolation, hostile inputs, and sanitized errors. The load runner reports accepted/rejected/error counts, throughput, and p50/p95/p99/max latency, then compares HTTP usage with persisted history and observed decisions. `db:reconcile` requires `DATABASE_URL` and directly compares all PostgreSQL counters with accepted history. [Performance](docs/performance.md) contains a committed measured run, its hardware/assumptions, findings, and reproduction commands. The [acceptance matrix](docs/acceptance-matrix.md) maps every assignment deliverable to its implementation and verification.
+
+For the complete PostgreSQL-backed test suite in Windows PowerShell (after creating the test database):
+
+```powershell
+$env:TEST_DATABASE_URL = 'postgresql://meter:meter@localhost:55432/metering_test'
+npm test
+```
+
+The latest user-run verification on 2026-10-23 passed **21/21 tests**. An isolated clean-volume Docker Compose verification also passed: the full demo, migrations/seed, and database persistence after container recreation. These checks do **not** establish that the service is fully secure for public deployment; see [security review](docs/security-review.md).
 
 ## Concurrency and integrity
 
@@ -154,4 +163,4 @@ The database has uniqueness, foreign-key, Plan-assignment triggers, and nonnegat
 
 Account creation requires a random Admin token from the environment. Account API keys are generated with Node `crypto.randomBytes(32)` and stored only as digests. Account-scoped queries use the authenticated Account ID, including Plan ownership and history filters. Input lengths and page sizes are bounded, and error responses avoid SQL internals. Secrets and generated data are ignored by Git. Dependencies are pinned by `package-lock.json`: Express is the HTTP server, Drizzle provides schema and migrations, `pg` supplies PostgreSQL connections, `tsx` runs TypeScript tools and tests, and TypeScript checks the application.
 
-Operational limits and pagination consistency are listed in [limitations](docs/limitations.md). The API offers a quota decision and cannot make a caller's later business action atomic with that decision. A caller should use one stable request ID per action and define how it handles an action that fails after consumption was accepted.
+Operational limits and pagination consistency are listed in [limitations](docs/limitations.md). Product behavior choices and reasons are in [assumptions](docs/assumptions.md). The [submission audit](docs/acceptance-matrix.md) lists rubric coverage, verification evidence, and remaining caveats. The API offers a quota decision and cannot make a caller's later business action atomic with that decision. A caller should use one stable request ID per action and define how it handles an action that fails after consumption was accepted.

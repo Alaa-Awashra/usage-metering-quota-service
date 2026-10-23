@@ -3,7 +3,7 @@ import { numberValue as n } from './common.js';
 
 export async function listRequests(accountId: string, options: { limit: number; cursor: string; userFilter: string | null }) {
   const result = await pool.query(
-    `SELECT r.*,u.external_id FROM consume_requests r JOIN users u ON u.id=r.user_id WHERE r.account_id=$1 AND r.id<$2 AND ($3::text IS NULL OR u.external_id=$3) AND r.accepted IS NOT NULL ORDER BY r.id DESC LIMIT $4`,
+    `SELECT r.*,r.month::text AS month_text,u.external_id FROM consume_requests r JOIN users u ON u.id=r.user_id WHERE r.account_id=$1 AND r.id<$2 AND ($3::text IS NULL OR u.external_id=$3) AND r.accepted IS NOT NULL ORDER BY r.id DESC LIMIT $4`,
     [accountId, options.cursor, options.userFilter, options.limit + 1],
   );
   const rows = result.rows.slice(0, options.limit);
@@ -15,7 +15,7 @@ export async function listRequests(accountId: string, options: { limit: number; 
       units: n(row.units),
       accepted: row.accepted,
       rejection: row.rejected_rule ? { level: row.rejected_level, rule: row.rejected_rule, limit: n(row.rejection_limit) } : null,
-      month: row.month instanceof Date ? row.month.toISOString().slice(0, 7) : String(row.month).slice(0, 7),
+      month: String(row.month_text).slice(0, 7),
       createdAt: row.created_at,
       accountMonthlyLimit: n(row.account_monthly_limit),
       accountMaxPerRequest: n(row.account_max_per_request),

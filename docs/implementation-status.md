@@ -1,39 +1,35 @@
-# Implementation status
+# Implementation and verification status
 
-## Completed
+**As of 2026-10-23 — Local project verification.** This file records observed test results, not a warranty of production readiness. The project is an Express/TypeScript API, one PostgreSQL 17 database, and a TypeScript CLI example.
 
-- TypeScript Express API, secure Account API keys, Admin Account creation, Account and User Plans, custom Plan updates, assignment, usage, history, and cursor pagination.
-- Drizzle schema and versioned PostgreSQL migration, assignment integrity triggers, idempotent predefined Plan seed, and migration startup lock.
-- Reference consumption transaction with an atomic request claim, Account configuration lock, User then Account counter locks, deterministic rule evaluation, and persisted decision snapshots.
-- TypeScript CLI with repeatable demo, Docker images and Compose, Node test suite using a real PostgreSQL test database, five HTTP load scenarios, and direct SQL reconciliation script.
+## Core deliverables
 
-## Verification performed on 2026-10-16
+- Accounts/API keys; tenant-isolated Users; global and custom Account/User Plans; Plan assignment/update; applied limit reads.
+- Accepted/rejected all-or-nothing usage, per-request and UTC-month rules, shared Account and individual User counters.
+- Transactional idempotency, conflict detection and saved request outcomes; usage by month and paginated history.
+- Versioned migrations, predefined seed, Dockerfiles, and default `docker compose up --build` for database, API and one-shot client.
+- Unit, integration, real-PostgreSQL concurrency, security, and HTTP load testing with reconciliation; API/architecture/transaction docs.
 
-- `npm run build`: passed.
-- `npm run typecheck`: passed, including service, client, and load runner.
-- `npm run test:unit`: 2 passed.
-- `npm run test:integration`: 3 passed, including Account-level rejection with an unchanged User counter and replay after a Plan limit change.
-- `npm run test:concurrency`: 4 passed, including 100 simultaneous requests, a first-counter Plan-change race, and a User Plan assignment race.
-- `npm run test:security`: 1 passed.
-- `npm test`: all 10 passed after the final test additions.
-- `docker compose up --build -d`: API image built and API became healthy after database migration and seed.
-- `npm run client -- demo`: passed against the containerized API; accepted, User rejection, Account rejection, Plan update, and replay outputs were observed.
-- `docker compose --profile demo build client` and `docker compose --profile demo run --rm client demo`: passed.
-- `npm run loadtest -- --scenario all --requests 100 --concurrency 16 --repeats 1 --output loadtest/results/local.json`: all five scenarios completed with zero errors and HTTP reconciliation passing; committed result is `loadtest/results/baseline-2026-10-16.json`.
-- `npm run db:reconcile`: zero Account mismatches, zero User mismatches, zero committed pending requests in both the development database after the demo/load run and the test database after the complete test suite.
-- Restarted database and API containers without deleting the volume; demo Account history count remained 5 and both services returned healthy.
-- `npm audit --omit=dev --audit-level=high`: zero production dependency vulnerabilities reported.
-- `npm ci --offline --no-audit`: clean lockfile installation passed after the sandbox blocked npm's subprocess; the authorized rerun succeeded.
-- After the route/service refactor and final test additions, root typecheck and build passed, and `npm test` passed all 10 tests.
+## Evidence actually observed
 
-## Final deployment checks
+| Check | Observed result |
+| --- | --- |
+| Project TypeScript typecheck | Passed on 2026-10-23 during Phase 1; service/client/load runner. |
+| Phase 1 edge-case suite | 13/13 tests passed, including UTC month, history and invalid dates. |
+| Phase 2 reliability suite | 17/17 passed, including conflicting concurrent request IDs, Plan reduction during 40 requests, rollback fault injection and replay after a lost response. |
+| Phase 3 security suite | **21/21 passed**, including token checks, tenant isolation, hostile inputs and safe error responses. Docker API readiness returned `ready`. |
+| Real PostgreSQL reconciliation | `accountMismatches: []`, `userMismatches: []`, `committedPending: 0` in the prior verified run. |
+| Local HTTP load run, 2026-10-23 | Five scenarios, 100 requests each, concurrency 16; all reconciled, zero unexpected errors. See [performance](performance.md). |
+| Phase 4 isolated fresh Docker test | **PHASE 4 PASS** on 2026-10-23: from empty volume, `docker compose up --build` started db+api+client, ran migrations/seed/demo, then recreated db+api while preserving and comparing persisted rows and counters. |
+| Example CLI | Demo showed distinct User Plans, User-limit rejection, Account-limit rejection, Plan update, idempotent replay, and usage/history; ended `Demo completed successfully.` |
 
-- An isolated fresh-volume Compose project initialized PostgreSQL, ran `db/init.sql`, seeded exactly four predefined Plans, and reached healthy API readiness; its containers were then stopped without touching the primary project.
-- The API image was rebuilt after the route/service refactor. The containerized demo passed again against that image.
-- Secret audit found only documented local development credentials, test fixtures, and placeholders in tracked files; `.env`, installed dependencies, build output, and local benchmark output are ignored.
+Tests use the `metering_test` database; the Phase 4 script uses its own disposable Compose project and volume. Neither test should run destructively against the main application database.
 
-## Current decisions
+## Remaining scope and caveats
 
-- The unrelated web template at the workspace root remains untouched; this project is in `usage-metering-quota-service/`.
-- Explicit TypeScript validation and `node:test` follow the curriculum amendment. The row-locking reference remains the production accounting implementation; guarded UPSERT was not adopted without an equivalent benefit measurement.
-- Normal quota rejection is HTTP 200 with a persisted decision. Unexpected database errors are not converted to business rejections.
+- The current installed `drizzle-orm@0.44.6` has a published high-severity advisory. No identified path constructs SQL identifiers from untrusted inputs; this narrows the specific exposure but **does not patch the dependency**. Do not claim an all-clear from `npm audit`. See [security review](security-review.md).
+- The recorded host Node.js 24.14.1 predates the 2026-10-21 Node.js security release; update before public use. Floating Docker base tags should be rebuilt/pulled to receive fixes.
+- Strict shared Account quota serializes a hot Account counter. Performance measurements are local, with limited samples; see [performance](performance.md).
+- Git working-tree cleanliness, remote push success, and review of the actual published repository must still be verified on the user's machine. They cannot be established from local runtime logs alone.
+
+[Acceptance matrix and final submission checks](acceptance-matrix.md).
